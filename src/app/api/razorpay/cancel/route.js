@@ -55,7 +55,19 @@ export async function POST(request) {
     }
 
     // ── Cancel on Razorpay (at end of current period) ────────
-    await razorpay.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
+    if (subscriptionId.startsWith('sub_mock_')) {
+      console.log(`Bypassing Razorpay cancel for mock subscription: ${subscriptionId}`);
+    } else {
+      try {
+        await razorpay.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
+      } catch (cancelErr) {
+        if (subscriptionId.includes('mock') || process.env.NODE_ENV === 'development') {
+          console.warn('Ignoring Razorpay API cancel failure for mock key:', cancelErr.message);
+        } else {
+          throw cancelErr;
+        }
+      }
+    }
 
     // Update user doc to reflect pending cancellation
     await userRef.update({
