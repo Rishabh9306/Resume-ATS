@@ -56,27 +56,35 @@ export async function POST(request) {
 
     // ── Cancel on Razorpay (at end of current period) ────────
     if (subscriptionId.startsWith('sub_mock_')) {
-      console.log(`Bypassing Razorpay cancel for mock subscription: ${subscriptionId}`);
+      console.log(`Bypassing Razorpay cancel for mock subscription. Resetting user to free plan.`);
+      await userRef.update({
+        plan: 'free',
+        subscriptionStatus: 'cancelled',
+        razorpaySubscriptionId: null,
+      });
     } else {
       try {
         await razorpay.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
+        await userRef.update({
+          subscriptionStatus: 'pending_cancellation',
+        });
       } catch (cancelErr) {
         if (subscriptionId.includes('mock') || process.env.NODE_ENV === 'development') {
           console.warn('Ignoring Razorpay API cancel failure for mock key:', cancelErr.message);
+          await userRef.update({
+            plan: 'free',
+            subscriptionStatus: 'cancelled',
+            razorpaySubscriptionId: null,
+          });
         } else {
           throw cancelErr;
         }
       }
     }
 
-    // Update user doc to reflect pending cancellation
-    await userRef.update({
-      subscriptionStatus: 'pending_cancellation',
-    });
-
     return NextResponse.json({
       success: true,
-      message: 'Subscription will be cancelled at the end of the current billing period. You will retain access until then.',
+      message: 'Subscription cancelled.',
     });
   } catch (err) {
     console.error('Cancel subscription error:', err);

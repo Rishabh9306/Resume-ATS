@@ -125,7 +125,7 @@ export default function BillingPage() {
   };
 
   const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription? You\'ll keep access until the end of your billing period.')) return;
+    if (!confirm('Are you sure you want to cancel your subscription?')) return;
     try {
       const token = await user.getIdToken();
       const res = await fetch('/api/razorpay/cancel', {
@@ -133,7 +133,10 @@ export default function BillingPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Cancel failed');
-      showToast('Subscription cancelled. Access continues until period end.', 'info');
+      showToast('Subscription cancelled successfully. Refreshing plan...', 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       showToast('Failed to cancel subscription', 'error');
     }
