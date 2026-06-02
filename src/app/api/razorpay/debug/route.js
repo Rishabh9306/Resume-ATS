@@ -4,40 +4,74 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/razorpay/debug
- * Temporary diagnostic endpoint to verify Razorpay SDK connectivity on Vercel.
- * DELETE THIS FILE after debugging.
+ * Temporary diagnostic endpoint. DELETE after debugging.
  */
 export async function GET() {
-  const diagnostics = {
-    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? `${process.env.RAZORPAY_KEY_ID.substring(0, 12)}...` : 'MISSING',
-    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET ? `set (${process.env.RAZORPAY_KEY_SECRET.length} chars)` : 'MISSING',
-    NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ? `${process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID.substring(0, 12)}...` : 'MISSING',
-    NODE_ENV: process.env.NODE_ENV,
+  const d = { steps: {} };
+
+  // Step 1: Env vars
+  d.steps.env = {
+    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? 'set' : 'MISSING',
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET ? 'set' : 'MISSING',
+    FIREBASE_ADMIN_PROJECT_ID: process.env.FIREBASE_ADMIN_PROJECT_ID ? 'set' : 'MISSING',
+    FIREBASE_ADMIN_CLIENT_EMAIL: process.env.FIREBASE_ADMIN_CLIENT_EMAIL ? 'set' : 'MISSING',
+    FIREBASE_ADMIN_PRIVATE_KEY: process.env.FIREBASE_ADMIN_PRIVATE_KEY ? `set (${process.env.FIREBASE_ADMIN_PRIVATE_KEY.length} chars)` : 'MISSING',
   };
 
+  // Step 2: Firebase Admin Auth
+  try {
+    const { getAdminAuth } = await import('@/lib/firebase-admin');
+    const auth = await getAdminAuth();
+    d.steps.firebase_auth = 'ok';
+  } catch (err) {
+    d.steps.firebase_auth = { error: err.message, stack: err.stack?.split('\n').slice(0, 3) };
+  }
+
+  // Step 3: Firebase Admin Firestore
+  try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const db = await getAdminDb();
+    d.steps.firebase_firestore = 'ok';
+  } catch (err) {
+    d.steps.firebase_firestore = { error: err.message, stack: err.stack?.split('\n').slice(0, 3) };
+  }
+
+  // Step 4: Razorpay SDK
   try {
     const Razorpay = require('razorpay');
-    diagnostics.sdk_loaded = true;
-
     const rz = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
-    diagnostics.sdk_initialized = true;
-
     const order = await rz.orders.create({
-      amount: 100, // ₹1 test
+      amount: 100,
       currency: 'INR',
       receipt: `debug_${Date.now()}`,
     });
-    diagnostics.order_created = true;
-    diagnostics.order_id = order.id;
+    d.steps.razorpay_order = { ok: true, order_id: order.id };
   } catch (err) {
-    diagnostics.error = err.message;
-    diagnostics.error_stack = err.stack?.split('\n').slice(0, 5);
-    diagnostics.error_code = err.statusCode || err.code;
-    diagnostics.error_description = err.error?.description || err.description;
+    d.steps.razorpay_order = { error: err.message };
   }
 
-  return NextResponse.json(diagnostics);
+  // Step 5: Simulate the exact flow from create-subscription (without auth)
+  try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const db = await getAdminDb();
+    // Try a simple read to verify Firestore connectivity
+    const testDoc = await db.collection('users').limit(1).get();
+    d.steps.firestore_read = { ok: true, doc_count: testDoc.size };
+  } catch (err) {
+    d.steps.firestore_read = { error: err.message, code: err.code };
+  }
+
+  // Step 6: Test Firestore settings call (potential issue)
+  try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const db = await getAdminDb();
+    d.steps.firestore_settings = 'ok';
+  } catch (err) {
+    d.steps.firestore_settings = { error: err.message };
+  }
+
+  return NextResponse.json(d, { status: 200 });
 }
