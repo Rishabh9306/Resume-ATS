@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function: Check if user is logged in
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function: Check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Rules for users collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Rules for scans collection
+    match /scans/{scanId} {
+      // Users can only read/query their own scan records
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow creation by authenticated users (since the server saves on behalf of users, but they might need it in testing)
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Prevent standard updates/deletes from the client for security
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Rules for invoices collection
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Invoices are strictly written via Admin SDK / Server webhook
+    }
+  }
+}

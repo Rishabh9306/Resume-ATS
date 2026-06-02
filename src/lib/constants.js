@@ -1,0 +1,73 @@
+export const PLANS = {
+  free: {
+    id: 'free',
+    name: 'Free',
+    price: 0,
+    scansPerMonth: 3,
+    aiSuggestions: false,
+    allowedBreakdowns: ['keywordMatch', 'sectionCompleteness'],
+    features: [
+      '3 scans/month',
+      'Basic ATS score',
+      'Keyword analysis',
+      'Section detection',
+    ],
+  },
+  starter: {
+    id: 'starter',
+    name: 'Starter',
+    price: 299,
+    scansPerMonth: 15,
+    aiSuggestions: true,
+    allowedBreakdowns: ['keywordMatch', 'sectionCompleteness', 'lengthDensity', 'compatibility'],
+    features: [
+      '15 scans/month',
+      'AI rewrite suggestions',
+      'Detailed breakdown',
+      'Missing keyword report',
+      'Email support',
+    ],
+  },
+  pro: {
+    id: 'pro',
+    name: 'Pro',
+    price: 699,
+    scansPerMonth: -1,
+    aiSuggestions: true,
+    popular: true,
+    allowedBreakdowns: ['keywordMatch', 'sectionCompleteness', 'lengthDensity', 'compatibility', 'formatting', 'impactMetrics'],
+    features: [
+      'Unlimited scans',
+      'Priority AI suggestions',
+      'Impact score analysis',
+      'ATS format checker',
+      'Export PDF reports',
+      'Priority support',
+    ],
+  },
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: 1999,
+    scansPerMonth: -1,
+    aiSuggestions: true,
+    allowedBreakdowns: ['keywordMatch', 'sectionCompleteness', 'lengthDensity', 'compatibility', 'formatting', 'impactMetrics'],
+    features: [
+      'Everything in Pro',
+      'Team dashboard (5 seats)',
+      'Bulk resume scanning',
+      'API access',
+      'Custom branding',
+      'Dedicated account manager',
+    ],
+  },
+};
+
+export const ATS_CRITERIA = {
+  keywordMatch: { name: 'Keyword Match', weight: 0.3, icon: '🔑' },
+  sectionCompleteness: { name: 'Section Completeness', weight: 0.2, icon: '📋' },
+  formatting: { name: 'ATS Formatting', weight: 0.15, icon: '📄' },
+  impactMetrics: { name: 'Impact & Metrics', weight: 0.15, icon: '📊' },
+  lengthDensity: { name: 'Length & Density', weight: 0.1, icon: '📏' },
+  compatibility: { name: 'ATS Compatibility', weight: 0.1, icon: '✅' },
+};
