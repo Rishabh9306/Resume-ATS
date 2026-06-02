@@ -8,11 +8,12 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/razorpay/create-subscription
  * Creates a Razorpay Order (Standard Checkout) for the requested plan upgrade.
- * Uses Orders API instead of Subscriptions API for broader test-mode compatibility.
  */
 export async function POST(request) {
+  let step = 'init';
   try {
-    // ── Authenticate ─────────────────────────────────────────
+    // ── Step 1: Authenticate ─────────────────────────────────
+    step = 'auth_header';
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -21,6 +22,7 @@ export async function POST(request) {
       );
     }
 
+    step = 'verify_token';
     const token = authHeader.split('Bearer ')[1];
     let userId;
     try {
@@ -34,10 +36,12 @@ export async function POST(request) {
       );
     }
 
-    // ── Parse body ───────────────────────────────────────────
+    // ── Step 2: Parse body ───────────────────────────────────
+    step = 'parse_body';
     const body = await request.json();
     const { planId } = body;
 
+    step = 'validate_plan';
     if (!planId || !PLANS[planId]) {
       return NextResponse.json(
         { error: 'Invalid plan ID.' },
@@ -52,11 +56,12 @@ export async function POST(request) {
       );
     }
 
+    step = 'get_plan_info';
     const planInfo = PLANS[planId];
 
-    // ── Get user info ────────────────────────────────────────
+    // ── Step 3: Get user info ────────────────────────────────
+    step = 'fetch_user';
     let userData = { email: '', displayName: 'User' };
-    let hasUserDoc = false;
 
     try {
       const adminDb = await getAdminDb();
@@ -64,35 +69,21 @@ export async function POST(request) {
       const userSnap = await userRef.get();
       if (userSnap.exists) {
         userData = userSnap.data();
-        hasUserDoc = true;
       }
     } catch (fsErr) {
-      console.warn('Firestore user fetch failed, using Auth fallback:', fsErr.message);
+      console.warn('Firestore user fetch failed:', fsErr.message);
     }
 
-    // If Firestore failed or user doc doesn't exist, fallback to Firebase Auth profile
-    if (!hasUserDoc) {
-      try {
-        const adminAuth = await getAdminAuth();
-        const userAuthData = await adminAuth.getUser(userId);
-        userData = {
-          email: userAuthData.email || '',
-          displayName: userAuthData.displayName || 'User',
-        };
-      } catch (authErr) {
-        console.warn('Auth user fetch failed:', authErr.message);
-      }
-    }
-
-    // ── Create Razorpay Order (Standard Checkout) ────────────
+    // ── Step 4: Create Razorpay Order ────────────────────────
+    step = 'create_order';
     let orderId;
     let isMock = false;
 
     try {
       const order = await razorpay.orders.create({
-        amount: planInfo.price * 100, // Amount in paise
+        amount: planInfo.price * 100,
         currency: 'INR',
-        receipt: `receipt_${planId}_${userId}_${Date.now()}`,
+        receipt: `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         notes: {
           userId,
           planId,
@@ -101,22 +92,20 @@ export async function POST(request) {
         },
       });
       orderId = order.id;
-      console.log(`Razorpay Order created: ${orderId} for plan ${planId}, amount ₹${planInfo.price}`);
     } catch (rzpErr) {
       console.warn('Razorpay Order creation failed:', rzpErr);
       const isAuthError = rzpErr.statusCode === 401 || rzpErr.error === 'Unauthorized';
 
-      // Fallback to mock mode only in development or on auth errors
       if (isAuthError || process.env.NODE_ENV === 'development') {
         orderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
         isMock = true;
-        console.log(`Bypassed Razorpay API using Developer Mock Mode: orderId=${orderId}`);
       } else {
         throw rzpErr;
       }
     }
 
-    // Store pending order info on user doc for reference
+    // ── Step 5: Store on user doc ────────────────────────────
+    step = 'save_user';
     try {
       const adminDb = await getAdminDb();
       const userRef = adminDb.collection('users').doc(userId);
@@ -125,9 +114,11 @@ export async function POST(request) {
         pendingPlan: planId,
       }, { merge: true });
     } catch (saveErr) {
-      console.warn('Failed to update user doc with order ID:', saveErr.message);
+      console.warn('Failed to update user doc:', saveErr.message);
     }
 
+    // ── Step 6: Return response ──────────────────────────────
+    step = 'respond';
     return NextResponse.json({
       success: true,
       orderId,
@@ -136,9 +127,9 @@ export async function POST(request) {
       isMock,
     });
   } catch (err) {
-    console.error('Create order error:', err);
+    console.error(`Create order error at step [${step}]:`, err);
     return NextResponse.json(
-      { error: 'Failed to create payment order.', details: err.message },
+      { error: 'Failed to create payment order.', step, details: err.message },
       { status: 500 }
     );
   }
