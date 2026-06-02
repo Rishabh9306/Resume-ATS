@@ -5,88 +5,10 @@ import { PLANS } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
-// In-memory cache for dynamically created plans
-const PLAN_CACHE = {};
-
-async function getOrCreateRazorpayPlanId(planId) {
-  const envKey = `RAZORPAY_PLAN_${planId.toUpperCase()}`;
-  let razorpayPlanId = process.env[envKey];
-
-  // If it's a valid ID (not a placeholder), use it directly
-  if (razorpayPlanId && !razorpayPlanId.includes('placeholder')) {
-    return razorpayPlanId;
-  }
-
-  // Check in-memory cache
-  if (PLAN_CACHE[planId]) {
-    return PLAN_CACHE[planId];
-  }
-
-  // Check Firestore config (if DB is online)
-  let adminDb = null;
-  try {
-    adminDb = await getAdminDb();
-    const configSnap = await adminDb.collection('settings').doc('razorpay_plans').get();
-    if (configSnap.exists) {
-      const data = configSnap.data();
-      if (data[planId]) {
-        PLAN_CACHE[planId] = data[planId];
-        return data[planId];
-      }
-    }
-  } catch (fsErr) {
-    console.warn('Firestore plan cache fetch failed:', fsErr.message);
-  }
-
-  // Create the plan dynamically in Razorpay
-  const planInfo = PLANS[planId];
-  if (!planInfo) {
-    throw new Error(`Plan details not found for ID: ${planId}`);
-  }
-
-  console.log(`Creating Razorpay plan dynamically for: ${planId} (${planInfo.name})`);
-  try {
-    const createdPlan = await razorpay.plans.create({
-      period: 'monthly',
-      interval: 1,
-      item: {
-        name: `ResumeATS Pro - ${planInfo.name} Plan`,
-        amount: planInfo.price * 100, // Amount in paise
-        currency: 'INR',
-        description: planInfo.features.slice(0, 3).join(', '),
-      },
-    });
-
-    // Store in cache
-    PLAN_CACHE[planId] = createdPlan.id;
-
-    // Save to Firestore (if DB is online)
-    if (adminDb) {
-      try {
-        await adminDb.collection('settings').doc('razorpay_plans').set({
-          [planId]: createdPlan.id
-        }, { merge: true });
-      } catch (saveErr) {
-        console.warn('Failed to save created plan to Firestore:', saveErr.message);
-      }
-    }
-
-    return createdPlan.id;
-  } catch (rzpErr) {
-    console.warn(`Razorpay plan creation failed, checking if we can use a mock plan ID:`, rzpErr.message);
-    const isAuthError = rzpErr.statusCode === 401 || rzpErr.error === 'Unauthorized';
-    if (isAuthError || process.env.NODE_ENV === 'development') {
-      const mockPlanId = `plan_mock_${planId}`;
-      PLAN_CACHE[planId] = mockPlanId;
-      return mockPlanId;
-    }
-    throw rzpErr;
-  }
-}
-
 /**
  * POST /api/razorpay/create-subscription
- * Creates a Razorpay subscription for the requested plan.
+ * Creates a Razorpay Order (Standard Checkout) for the requested plan upgrade.
+ * Uses Orders API instead of Subscriptions API for broader test-mode compatibility.
  */
 export async function POST(request) {
   try {
@@ -125,22 +47,12 @@ export async function POST(request) {
 
     if (planId === 'free') {
       return NextResponse.json(
-        { error: 'Cannot create a subscription for the free plan.' },
+        { error: 'Cannot create a payment for the free plan.' },
         { status: 400 }
       );
     }
 
-    let razorpayPlanId;
-    try {
-      razorpayPlanId = await getOrCreateRazorpayPlanId(planId);
-    } catch (planErr) {
-      console.error('Plan resolution error:', planErr);
-      const errMsg = planErr.message || planErr.error?.description || planErr.description || (typeof planErr.error === 'string' ? planErr.error : '') || JSON.stringify(planErr) || 'Unknown Razorpay error';
-      return NextResponse.json(
-        { error: `Razorpay plan could not be resolved or created: ${errMsg}` },
-        { status: 500 }
-      );
-    }
+    const planInfo = PLANS[planId];
 
     // ── Get user info ────────────────────────────────────────
     let userData = { email: '', displayName: 'User' };
@@ -172,70 +84,61 @@ export async function POST(request) {
       }
     }
 
-    // ── Create Razorpay subscription ─────────────────────────
-    let subscriptionId;
-    let shortUrl;
+    // ── Create Razorpay Order (Standard Checkout) ────────────
+    let orderId;
     let isMock = false;
 
-    const isMockPlan = razorpayPlanId.startsWith('plan_mock_');
+    try {
+      const order = await razorpay.orders.create({
+        amount: planInfo.price * 100, // Amount in paise
+        currency: 'INR',
+        receipt: `receipt_${planId}_${userId}_${Date.now()}`,
+        notes: {
+          userId,
+          planId,
+          userEmail: userData.email || '',
+          planName: planInfo.name,
+        },
+      });
+      orderId = order.id;
+      console.log(`Razorpay Order created: ${orderId} for plan ${planId}, amount ₹${planInfo.price}`);
+    } catch (rzpErr) {
+      console.warn('Razorpay Order creation failed:', rzpErr);
+      const isAuthError = rzpErr.statusCode === 401 || rzpErr.error === 'Unauthorized';
 
-    if (isMockPlan) {
-      subscriptionId = `sub_mock_${Math.random().toString(36).substring(2, 11)}`;
-      shortUrl = '#';
-      isMock = true;
-      console.log(`Bypassed Razorpay API using Developer Mock Mode (mock plan): subscriptionId=${subscriptionId}`);
-    } else {
-      try {
-        const subscription = await razorpay.subscriptions.create({
-          plan_id: razorpayPlanId,
-          customer_notify: 1,
-          total_count: 12, // 12 billing cycles
-          notes: {
-            userId,
-            planId,
-            userEmail: userData.email || '',
-          },
-        });
-        subscriptionId = subscription.id;
-        shortUrl = subscription.short_url;
-      } catch (rzpErr) {
-        console.warn('Razorpay API failed, checking for local testing fallback:', rzpErr);
-        const isAuthError = rzpErr.statusCode === 401 || rzpErr.error === 'Unauthorized';
-        
-        // Fallback in development mode or on auth errors (invalid keys)
-        if (isAuthError || process.env.NODE_ENV === 'development') {
-          subscriptionId = `sub_mock_${Math.random().toString(36).substring(2, 11)}`;
-          shortUrl = '#';
-          isMock = true;
-          console.log(`Bypassed Razorpay API using Developer Mock Mode: subscriptionId=${subscriptionId}`);
-        } else {
-          throw rzpErr;
-        }
+      // Fallback to mock mode only in development or on auth errors
+      if (isAuthError || process.env.NODE_ENV === 'development') {
+        orderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
+        isMock = true;
+        console.log(`Bypassed Razorpay API using Developer Mock Mode: orderId=${orderId}`);
+      } else {
+        throw rzpErr;
       }
     }
 
-    // Store subscription ID on user doc for reference (graceful if fails)
+    // Store pending order info on user doc for reference
     try {
       const adminDb = await getAdminDb();
       const userRef = adminDb.collection('users').doc(userId);
       await userRef.set({
-        razorpaySubscriptionId: subscriptionId,
+        razorpayOrderId: orderId,
         pendingPlan: planId,
       }, { merge: true });
     } catch (saveErr) {
-      console.warn('Failed to update user doc with subscription ID:', saveErr.message);
+      console.warn('Failed to update user doc with order ID:', saveErr.message);
     }
 
     return NextResponse.json({
       success: true,
-      subscriptionId,
-      shortUrl,
+      orderId,
+      amount: planInfo.price * 100,
+      currency: 'INR',
       isMock,
     });
   } catch (err) {
-    console.error('Create subscription error:', err);
+    console.error('Create order error:', err);
     return NextResponse.json(
-      { error: 'Failed to create subscription.', details: err.message },
+      { error: 'Failed to create payment order.', details: err.message },
       { status: 500 }
     );
   }

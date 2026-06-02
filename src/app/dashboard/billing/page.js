@@ -59,7 +59,7 @@ export default function BillingPage() {
               },
               body: JSON.stringify({
                 razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
-                razorpay_subscription_id: data.subscriptionId,
+                razorpay_order_id: data.orderId,
                 razorpay_signature: 'mock_signature',
                 planId,
               }),
@@ -75,19 +75,22 @@ export default function BillingPage() {
         return;
       }
 
-      // Load Razorpay checkout
+      // ── Load Razorpay Standard Checkout (Orders flow) ─────────
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.onload = () => {
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-          subscription_id: data.subscriptionId,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.orderId,
           name: 'ResumeATS Pro',
           description: `${PLANS[planId].name} Plan - ₹${PLANS[planId].price}/month`,
           handler: async (response) => {
+            // response contains: razorpay_payment_id, razorpay_order_id, razorpay_signature
             showToast('Verifying payment...', 'info');
             try {
-              const res = await fetch('/api/razorpay/verify-payment', {
+              const verifyRes = await fetch('/api/razorpay/verify-payment', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -95,25 +98,35 @@ export default function BillingPage() {
                 },
                 body: JSON.stringify({
                   razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_subscription_id: response.razorpay_subscription_id,
+                  razorpay_order_id: response.razorpay_order_id,
                   razorpay_signature: response.razorpay_signature,
                   planId,
                 }),
               });
-              if (!res.ok) throw new Error('Payment verification failed');
+              if (!verifyRes.ok) throw new Error('Payment verification failed');
               showToast('Payment successful! Your plan has been upgraded.', 'success');
               setTimeout(() => window.location.reload(), 2000);
             } catch (err) {
               console.error('Verification error:', err);
-              showToast('Payment completed but verification failed. Updating shortly via webhook.', 'warning');
+              showToast('Payment completed but verification failed. Please contact support.', 'warning');
               setTimeout(() => window.location.reload(), 3000);
             }
           },
           prefill: { email: user.email, name: user.displayName },
           theme: { color: '#6c63ff' },
+          modal: {
+            ondismiss: () => {
+              showToast('Payment cancelled.', 'info');
+              setUpgrading(null);
+            },
+          },
         };
         const rzp = new window.Razorpay(options);
         rzp.open();
+      };
+      script.onerror = () => {
+        showToast('Failed to load payment gateway. Please try again.', 'error');
+        setUpgrading(null);
       };
       document.body.appendChild(script);
     } catch (err) {
