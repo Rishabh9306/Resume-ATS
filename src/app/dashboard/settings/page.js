@@ -224,6 +224,37 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Help, Feedback & Support Section */}
+      <div className="settings-section glass-card">
+        <h3 className="settings-section-title">Help & Support</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-md)' }}>
+          Need assistance, want to share an idea, or encountered a problem? Use the options below to get help or submit your feedback.
+        </p>
+        <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-secondary" 
+            onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'support' } }))}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}
+          >
+            💬 Contact Support & FAQ
+          </button>
+          <button 
+            className="btn-secondary" 
+            onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'feedback' } }))}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}
+          >
+            ⭐ Share Feedback
+          </button>
+          <button 
+            className="btn-secondary" 
+            onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'bug' } }))}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}
+          >
+            🐛 Report a Bug
+          </button>
+        </div>
+      </div>
+
       {/* Danger Zone */}
       <div className="settings-section glass-card danger-zone">
         <h3 className="settings-section-title" style={{ color: 'var(--danger)' }}>Danger Zone</h3>

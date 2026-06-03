@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import SupportWidget from '@/components/SupportWidget';
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
@@ -176,6 +177,7 @@ export default function DashboardLayout({ children }) {
           </main>
         </div>
       </div>
+      <SupportWidget />
     </ProtectedRoute>
   );
 }

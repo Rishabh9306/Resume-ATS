@@ -12,6 +12,11 @@ export default function Footer() {
     setMounted(true);
   }, []);
 
+  const handleOpenSupport = (e, tab) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab } }));
+  };
+
   const isPaid = mounted && userData?.plan && userData.plan !== 'free';
 
   return (
@@ -42,6 +47,15 @@ export default function Footer() {
             </div>
           </div>
           <div className="footer__column">
+            <h4 className="footer__column-title">Support</h4>
+            <div className="footer__links">
+              <a href="#" onClick={(e) => handleOpenSupport(e, 'support')} className="footer__link">Help Center</a>
+              <a href="mailto:support@resumeats.com" className="footer__link">Email Us</a>
+              <a href="#" onClick={(e) => handleOpenSupport(e, 'feedback')} className="footer__link">Send Feedback</a>
+              <a href="#" onClick={(e) => handleOpenSupport(e, 'bug')} className="footer__link">Report a Bug</a>
+            </div>
+          </div>
+          <div className="footer__column">
             <h4 className="footer__column-title">Legal</h4>
             <div className="footer__links">
               <Link href="#" className="footer__link">Privacy Policy</Link>
@@ -52,7 +66,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="footer__bottom">
-          <p>© 2025 ResumeATS{isPaid ? ' Pro' : ''}. All rights reserved.</p>
+          <p>© 2026 ResumeATS{isPaid ? ' Pro' : ''}. All rights reserved.</p>
         </div>
       </div>
     </footer>

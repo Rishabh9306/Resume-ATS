@@ -232,6 +232,34 @@ export default function BillingPage() {
         ))}
       </div>
 
+      {/* Payment Help / Billing Support Banner */}
+      <div className="billing__support-banner glass-card" style={{
+        marginTop: 'var(--space-2xl)',
+        padding: 'var(--space-lg)',
+        border: '1px dashed rgba(108, 99, 255, 0.2)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 'var(--space-md)',
+        flexWrap: 'wrap'
+      }}>
+        <div>
+          <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+            💳 Having trouble with payment or invoicing?
+          </h4>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+            If you experienced an issue with a transaction or have billing questions, let us know and we will resolve it immediately.
+          </p>
+        </div>
+        <button 
+          className="btn-secondary" 
+          onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'bug' } }))}
+          style={{ padding: '8px 16px', fontSize: 'var(--text-xs)' }}
+        >
+          Contact Billing Support
+        </button>
+      </div>
+
       {/* Invoice History */}
       {invoices.length > 0 && (
         <div className="billing__invoices" style={{ marginTop: 'var(--space-3xl)' }}>

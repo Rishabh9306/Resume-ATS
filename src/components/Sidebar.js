@@ -72,6 +72,16 @@ export default function Sidebar({ isOpen, onClose }) {
               </Link>
             );
           })}
+          <button
+            className="dashboard__sidebar-link"
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new CustomEvent('open-support-widget'));
+            }}
+            style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit', padding: 'inherit', marginTop: 'var(--space-xs)', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 'var(--space-md)' }}
+          >
+            <span>💬 Help & Feedback</span>
+          </button>
         </nav>
 
         <div className="dashboard__sidebar-bottom" style={{

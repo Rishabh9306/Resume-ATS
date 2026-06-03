@@ -220,11 +220,25 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* Quick Action */}
-      <div style={{ marginBottom: 'var(--space-2xl)' }}>
+      {/* Quick Actions */}
+      <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-2xl)', flexWrap: 'wrap' }}>
         <Link href="/dashboard/scan" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-sm)', textDecoration: 'none' }}>
-          New Scan
+          📝 New Scan
         </Link>
+        <button 
+          onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'feedback' } }))}
+          className="btn-secondary" 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}
+        >
+          ⭐ Leave Feedback
+        </button>
+        <button 
+          onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'bug' } }))}
+          className="btn-secondary" 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}
+        >
+          🐛 Report a Bug
+        </button>
       </div>
 
       {/* Recent Scans */}

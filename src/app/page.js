@@ -5,6 +5,7 @@ import Pricing from '@/components/Pricing';
 import FAQ from '@/components/FAQ';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
+import SupportWidget from '@/components/SupportWidget';
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         <Testimonials />
       </main>
       <Footer />
+      <SupportWidget />
     </>
   );
 }

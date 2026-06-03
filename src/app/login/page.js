@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import SupportWidget from '@/components/SupportWidget';
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('signin');
@@ -90,7 +91,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
+    <>
+      <div className="login-page">
       {/* Left Panel */}
       <div className="login-page__left">
         <div className="login-page__left-content">
@@ -249,5 +251,7 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+      <SupportWidget />
+    </>
   );
 }

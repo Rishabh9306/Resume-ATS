@@ -239,6 +239,12 @@ export default function ResultsPage() {
                   📄 Export PDF {!['pro', 'teams', 'enterprise'].includes(currentPlan) && '🔒'}
                 </button>
               </div>
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget', { detail: { tab: 'bug' } }))}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', marginTop: 'var(--space-xs)' }}
+              >
+                Report score mismatch or parsing issue
+              </button>
             </div>
           </div>
         </div>
