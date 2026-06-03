@@ -80,14 +80,14 @@ export default function SupportWidget() {
     setSendingFeedback(true);
     try {
       if (db) {
-        await addDoc(collection(db, 'feedback'), {
+        addDoc(collection(db, 'feedback'), {
           userId: user?.uid || 'anonymous',
           userEmail: user?.email || 'anonymous',
           rating,
           message: feedbackMsg,
           page: pathname,
           createdAt: new Date(),
-        });
+        }).catch(err => console.error('Background feedback write error:', err));
       }
       setRating(0);
       setFeedbackMsg('');
@@ -104,7 +104,7 @@ export default function SupportWidget() {
     setSendingBug(true);
     try {
       if (db) {
-        await addDoc(collection(db, 'bug_reports'), {
+        addDoc(collection(db, 'bug_reports'), {
           userId: user?.uid || 'anonymous',
           userEmail: user?.email || 'anonymous',
           category: bugCategory,
@@ -114,7 +114,7 @@ export default function SupportWidget() {
           page: pathname,
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
           createdAt: new Date(),
-        });
+        }).catch(err => console.error('Background bug report write error:', err));
       }
       setBugCategory('');
       setBugSeverity('Medium');
