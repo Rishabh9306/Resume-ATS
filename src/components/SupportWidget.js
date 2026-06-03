@@ -16,7 +16,7 @@ const HELP_LINKS = [
   { icon: '📖', title: 'Getting Started Guide', desc: 'Learn how to scan your first resume', href: '/#faq' },
   { icon: '🎯', title: 'How ATS Scoring Works', desc: '6 criteria that determine your score', href: '/#features' },
   { icon: '💰', title: 'Pricing & Plans', desc: 'Compare Free, Pro, Teams & Enterprise', href: '/#pricing' },
-  { icon: '📧', title: 'Email Support', desc: 'support@resumeats.com', href: 'mailto:support@resumeats.com' },
+  { icon: '📧', title: 'Email Support', desc: 'gupta.rishabh0406@gmail.com', href: 'mailto:gupta.rishabh0406@gmail.com' },
 ];
 
 const RATING_EMOJIS = [
@@ -61,14 +61,7 @@ export default function SupportWidget() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [isOpen]);
 
-  // Reset success state
-  useEffect(() => {
-    if (!successState) return;
-    const timer = setTimeout(() => {
-      setSuccessState(null);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [successState]);
+  // No auto-reset for success state to let users read the receipt at their own pace
 
   // Listen for external open event (from sidebar button or other triggers)
   useEffect(() => {
@@ -299,13 +292,28 @@ export default function SupportWidget() {
     <div style={successStyle}>
       <div style={{ fontSize: '48px', animation: 'pulse 0.5s ease' }}>✅</div>
       <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', margin: 0 }}>
-        {type === 'feedback' ? 'Thanks for your feedback!' : 'Bug report submitted!'}
+        {type === 'feedback' ? 'Thank you for your feedback!' : 'Bug report submitted!'}
       </h4>
       <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
         {type === 'feedback'
           ? 'Your input helps us improve ResumeATS.'
           : 'Our team will investigate this issue.'}
       </p>
+      <button 
+        onClick={() => setSuccessState(null)}
+        style={{
+          background: 'none',
+          border: 'none',
+          color: '#6c63ff',
+          fontSize: '12px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          textDecoration: 'underline',
+          marginTop: '12px'
+        }}
+      >
+        {type === 'feedback' ? 'Submit another feedback' : 'Report another bug'}
+      </button>
     </div>
   );
 

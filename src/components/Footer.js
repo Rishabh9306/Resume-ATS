@@ -50,7 +50,7 @@ export default function Footer() {
             <h4 className="footer__column-title">Support</h4>
             <div className="footer__links">
               <a href="#" onClick={(e) => handleOpenSupport(e, 'support')} className="footer__link">Help Center</a>
-              <a href="mailto:support@resumeats.com" className="footer__link">Email Us</a>
+              <a href="mailto:gupta.rishabh0406@gmail.com" className="footer__link">Email Us</a>
               <a href="#" onClick={(e) => handleOpenSupport(e, 'feedback')} className="footer__link">Send Feedback</a>
               <a href="#" onClick={(e) => handleOpenSupport(e, 'bug')} className="footer__link">Report a Bug</a>
             </div>
