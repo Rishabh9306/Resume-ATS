@@ -8,12 +8,14 @@ import { PLANS } from '@/lib/constants';
 const navItems = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'New Scan', href: '/dashboard/scan' },
-  { label: 'Bulk Scanning', href: '/dashboard/bulk', enterpriseOnly: true },
-  { label: 'Team Dashboard', href: '/dashboard/team', enterpriseOnly: true },
-  { label: 'API Keys', href: '/dashboard/api', enterpriseOnly: true },
+  { label: 'Bulk Scanning', href: '/dashboard/bulk', requiredPlan: 'teams' },
+  { label: 'Team Dashboard', href: '/dashboard/team', requiredPlan: 'teams' },
+  { label: 'API Keys', href: '/dashboard/api', requiredPlan: 'enterprise' },
   { label: 'Billing', href: '/dashboard/billing' },
   { label: 'Settings', href: '/dashboard/settings' },
 ];
+
+const PLAN_RANK = { free: 0, pro: 1, teams: 2, enterprise: 3 };
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
@@ -51,14 +53,14 @@ export default function Sidebar({ isOpen, onClose }) {
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
             <span className="gradient-text" style={{ fontSize: 'var(--text-lg)', fontWeight: 800 }}>ResumeATS</span>
             {currentPlan !== 'free' && (
-              <span className="navbar__logo-badge">Pro</span>
+              <span className="navbar__logo-badge">{planInfo.name}</span>
             )}
           </Link>
         </div>
 
         <nav className="dashboard__sidebar-nav">
           {navItems.map((item) => {
-            const isLocked = item.enterpriseOnly && currentPlan !== 'enterprise';
+            const isLocked = item.requiredPlan && (PLAN_RANK[currentPlan] || 0) < (PLAN_RANK[item.requiredPlan] || 0);
             return (
               <Link
                 key={item.label}

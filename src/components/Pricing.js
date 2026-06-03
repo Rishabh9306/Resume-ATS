@@ -64,7 +64,7 @@ export default function Pricing() {
                 className={plan.popular ? 'btn-primary btn-lg' : 'btn-secondary btn-lg'}
                 style={{ width: '100%', textAlign: 'center' }}
               >
-                {plan.price === 0 ? 'Start Free' : plan.id === 'enterprise' ? 'Contact Sales' : `Get ${plan.name}`}
+                {plan.price === 0 ? 'Start Free' : plan.id === 'enterprise' ? 'Contact Sales' : plan.id === 'teams' ? 'Get Teams' : `Get ${plan.name}`}
               </Link>
             </div>
           ))}

@@ -31,8 +31,9 @@ export async function POST(request) {
     const adminDb = await getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const userSnap = await userRef.get();
-    if (!userSnap.exists || userSnap.data().plan !== 'enterprise') {
-      return NextResponse.json({ error: 'Enterprise subscription required for bulk scanning.' }, { status: 403 });
+    const userPlan = userSnap.exists ? userSnap.data().plan : null;
+    if (!['teams', 'enterprise'].includes(userPlan)) {
+      return NextResponse.json({ error: 'Teams or Enterprise subscription required for bulk scanning.' }, { status: 403 });
     }
 
     // ── Parse form fields ────────────────────────────────────
@@ -44,8 +45,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'At least one resume file is required.' }, { status: 400 });
     }
 
-    if (resumeFiles.length > 5) {
-      return NextResponse.json({ error: 'Maximum 5 files can be processed in a bulk scan batch.' }, { status: 400 });
+    const maxBatch = userPlan === 'enterprise' ? 50 : 10;
+    if (resumeFiles.length > maxBatch) {
+      return NextResponse.json({ error: `Maximum ${maxBatch} files can be processed per batch on your ${userPlan} plan.` }, { status: 400 });
     }
 
     if (!jobDescription || typeof jobDescription !== 'string' || jobDescription.trim().length < 20) {

@@ -52,12 +52,38 @@ export async function POST(request) {
     if (!plan || !plan.aiSuggestions) {
       return NextResponse.json(
         {
-          error: 'AI suggestions are not available on your current plan. Upgrade to Starter or above.',
+          error: 'AI suggestions are not available on your current plan.',
           code: 'PLAN_UPGRADE_REQUIRED',
           currentPlan: userData.plan || 'free',
         },
         { status: 403 }
       );
+    }
+
+    // Check AI rewrite limits for free tier
+    const aiRewritesLimit = plan.aiRewritesPerMonth;
+    if (aiRewritesLimit !== -1) {
+      const aiRewritesUsed = userData.aiRewritesUsed || 0;
+      // Check if we need to reset the monthly counter
+      const now = new Date();
+      const lastResetDate = userData.aiRewritesResetDate?.toDate?.() || userData.aiRewritesResetDate;
+      const needsReset = !lastResetDate || new Date(lastResetDate).getMonth() !== now.getMonth() || new Date(lastResetDate).getFullYear() !== now.getFullYear();
+
+      if (needsReset) {
+        // Reset counter for the new month
+        await userRef.update({ aiRewritesUsed: 0, aiRewritesResetDate: now });
+      } else if (aiRewritesUsed >= aiRewritesLimit) {
+        return NextResponse.json(
+          {
+            error: `You've used all ${aiRewritesLimit} free AI rewrites this month. Upgrade to Pro for unlimited AI rewrites — just ₹149/mo!`,
+            code: 'AI_LIMIT_REACHED',
+            currentPlan: userData.plan || 'free',
+            aiRewritesUsed,
+            aiRewritesLimit,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // ── Parse body ───────────────────────────────────────────
@@ -87,6 +113,14 @@ export async function POST(request) {
 
     // ── Get AI suggestions ───────────────────────────────────
     const suggestions = await getAISuggestions(resumeText, jobDescription, breakdown);
+
+    // Increment AI rewrite counter for plans with limits
+    if (aiRewritesLimit !== -1) {
+      const admin = await import('firebase-admin');
+      await userRef.update({
+        aiRewritesUsed: admin.default.firestore.FieldValue.increment(1),
+      });
+    }
 
     return NextResponse.json({
       success: true,

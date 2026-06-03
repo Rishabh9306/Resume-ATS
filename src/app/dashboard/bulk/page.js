@@ -101,7 +101,7 @@ export default function BulkScanPage() {
   };
 
   return (
-    <EnterpriseGate>
+    <EnterpriseGate requiredPlan="teams" featureDescription="Bulk resume scanning lets you analyze up to 10 resumes at once. Available on Teams (₹499/mo) and Enterprise plans.">
       <div className="scan-page fade-in">
         <div className="scan-page-header">
           <h2>Parallel Bulk Scanning</h2>

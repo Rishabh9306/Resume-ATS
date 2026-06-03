@@ -35,11 +35,8 @@ export default function ScoreBreakdown({ breakdown, currentPlan = 'free' }) {
         const isExpanded = expandedItems[key];
         const scoreClass = getScoreColorClass(score);
 
-        // Determine which plan is needed to unlock
-        let requiredPlan = 'starter';
-        if (key === 'formatting' || key === 'impactMetrics') {
-          requiredPlan = 'pro';
-        }
+        // All advanced breakdowns unlock at Pro tier
+        let requiredPlan = 'pro';
 
         return (
           <div

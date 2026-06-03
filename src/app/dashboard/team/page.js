@@ -131,7 +131,7 @@ export default function TeamDashboardPage() {
   const seatsLimit = team?.seatsLimit || 5;
 
   return (
-    <EnterpriseGate>
+    <EnterpriseGate requiredPlan="teams" featureDescription="Team workspace lets you manage up to 5 recruiter seats. Available on Teams (₹499/mo) and Enterprise plans.">
       <div className="team-page fade-in">
         <div className="scan-page-header">
           <h2>Team Seat Dashboard</h2>

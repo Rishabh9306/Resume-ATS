@@ -106,7 +106,7 @@ export async function POST(request) {
           const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
           await userRef.set({
-            plan: planId || 'starter',
+            plan: planId || 'pro',
             razorpaySubscriptionId: subscriptionId,
             subscriptionStatus: 'active',
             pendingPlan: null,

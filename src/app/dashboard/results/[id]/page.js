@@ -170,8 +170,8 @@ export default function ResultsPage() {
   const displaySuggestions = aiSuggestions || scanData.aiSuggestions;
 
   const handleExportPDF = () => {
-    if (!['pro', 'enterprise'].includes(currentPlan)) {
-      showToast('PDF Export is a Pro & Enterprise feature. Upgrade to unlock!', 'warning');
+    if (!['pro', 'teams', 'enterprise'].includes(currentPlan)) {
+      showToast('PDF Export requires a Pro plan or above. Upgrade from just ₹149/mo!', 'warning');
       router.push('/dashboard/billing');
       return;
     }
@@ -236,7 +236,7 @@ export default function ResultsPage() {
                   showToast('Link copied to clipboard!', 'success');
                 }}>🔗 Share</button>
                 <button className="btn-secondary" style={{ flex: 1.2, justifyContent: 'center' }} onClick={handleExportPDF}>
-                  📄 Export PDF {!['pro', 'enterprise'].includes(currentPlan) && '🔒'}
+                  📄 Export PDF {!['pro', 'teams', 'enterprise'].includes(currentPlan) && '🔒'}
                 </button>
               </div>
             </div>
