@@ -79,6 +79,20 @@ export default function SupportWidget() {
     if (!rating) return;
     setSendingFeedback(true);
     try {
+      // Send email via our backend API route
+      fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'feedback',
+          userId: user?.uid || 'anonymous',
+          userEmail: user?.email || 'anonymous',
+          rating,
+          message: feedbackMsg,
+          page: pathname,
+        }),
+      }).catch(err => console.error('Background support email sending error:', err));
+
       if (db) {
         addDoc(collection(db, 'feedback'), {
           userId: user?.uid || 'anonymous',
@@ -103,6 +117,23 @@ export default function SupportWidget() {
     if (!bugCategory || !bugDesc.trim()) return;
     setSendingBug(true);
     try {
+      // Send email via our backend API route
+      fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'bug',
+          userId: user?.uid || 'anonymous',
+          userEmail: user?.email || 'anonymous',
+          category: bugCategory,
+          severity: bugSeverity,
+          description: bugDesc,
+          steps: bugSteps,
+          page: pathname,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        }),
+      }).catch(err => console.error('Background bug support email sending error:', err));
+
       if (db) {
         addDoc(collection(db, 'bug_reports'), {
           userId: user?.uid || 'anonymous',
