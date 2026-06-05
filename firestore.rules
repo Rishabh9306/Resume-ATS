@@ -19,8 +19,8 @@ service cloud.firestore {
 
     // Rules for scans collection
     match /scans/{scanId} {
-      // Users can only read/query their own scan records
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only read/query their own scan records or their team members' records
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.teamOwnerId == request.auth.uid);
       // Allow creation by authenticated users (since the server saves on behalf of users, but they might need it in testing)
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       // Prevent standard updates/deletes from the client for security
