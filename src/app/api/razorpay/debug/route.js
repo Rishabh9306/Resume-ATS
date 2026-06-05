@@ -11,8 +11,8 @@ export async function GET() {
 
   // Step 1: Env vars
   d.steps.env = {
-    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? 'set' : 'MISSING',
-    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET ? 'set' : 'MISSING',
+    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? `${process.env.RAZORPAY_KEY_ID.slice(0, 9)}... (len: ${process.env.RAZORPAY_KEY_ID.length})` : 'MISSING',
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET ? `${process.env.RAZORPAY_KEY_SECRET.slice(0, 4)}... (len: ${process.env.RAZORPAY_KEY_SECRET.length})` : 'MISSING',
     FIREBASE_ADMIN_PROJECT_ID: process.env.FIREBASE_ADMIN_PROJECT_ID ? 'set' : 'MISSING',
     FIREBASE_ADMIN_CLIENT_EMAIL: process.env.FIREBASE_ADMIN_CLIENT_EMAIL ? 'set' : 'MISSING',
     FIREBASE_ADMIN_PRIVATE_KEY: process.env.FIREBASE_ADMIN_PRIVATE_KEY ? `set (${process.env.FIREBASE_ADMIN_PRIVATE_KEY.length} chars)` : 'MISSING',
