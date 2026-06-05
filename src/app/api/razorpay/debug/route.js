@@ -78,6 +78,7 @@ export async function GET() {
     d.steps.razorpay_direct_fetch = {
       status: res.status,
       ok: res.ok,
+      headers: Object.fromEntries(res.headers.entries()),
       data: resData
     };
   } catch (err) {
