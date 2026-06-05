@@ -44,30 +44,27 @@ export async function POST(request) {
     }
 
     // ── Verify signature ─────────────────────────────────────
-    const isMock = razorpay_order_id.startsWith('order_mock_');
-    if (!isMock) {
-      const secret = process.env.RAZORPAY_KEY_SECRET;
-      if (!secret) {
-        return NextResponse.json(
-          { error: 'Razorpay secret key not configured.' },
-          { status: 500 }
-        );
-      }
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return NextResponse.json(
+        { error: 'Razorpay secret key not configured.' },
+        { status: 500 }
+      );
+    }
 
-      // For Standard Checkout (Orders), signature format is: order_id + '|' + payment_id
-      const text = `${razorpay_order_id}|${razorpay_payment_id}`;
-      const expectedSignature = crypto
-        .createHmac('sha256', secret)
-        .update(text)
-        .digest('hex');
+    // For Standard Checkout (Orders), signature format is: order_id + '|' + payment_id
+    const text = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(text)
+      .digest('hex');
 
-      if (razorpay_signature !== expectedSignature) {
-        console.warn('Payment signature verification failed.');
-        return NextResponse.json(
-          { error: 'Invalid signature verification.' },
-          { status: 400 }
-        );
-      }
+    if (razorpay_signature !== expectedSignature) {
+      console.warn('Payment signature verification failed.');
+      return NextResponse.json(
+        { error: 'Invalid signature verification.' },
+        { status: 400 }
+      );
     }
 
     // ── Upgrade User Plan ────────────────────────────────────

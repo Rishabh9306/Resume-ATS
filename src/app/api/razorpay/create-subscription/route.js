@@ -76,33 +76,18 @@ export async function POST(request) {
 
     // ── Step 4: Create Razorpay Order ────────────────────────
     step = 'create_order';
-    let orderId;
-    let isMock = false;
-
-    try {
-      const order = await razorpay.orders.create({
-        amount: planInfo.price * 100,
-        currency: 'INR',
-        receipt: `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        notes: {
-          userId,
-          planId,
-          userEmail: userData.email || '',
-          planName: planInfo.name,
-        },
-      });
-      orderId = order.id;
-    } catch (rzpErr) {
-      console.warn('Razorpay Order creation failed:', rzpErr);
-      const isAuthError = rzpErr.statusCode === 401 || rzpErr.error === 'Unauthorized';
-
-      if (isAuthError || process.env.NODE_ENV === 'development') {
-        orderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
-        isMock = true;
-      } else {
-        throw rzpErr;
-      }
-    }
+    const order = await razorpay.orders.create({
+      amount: planInfo.price * 100,
+      currency: 'INR',
+      receipt: `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      notes: {
+        userId,
+        planId,
+        userEmail: userData.email || '',
+        planName: planInfo.name,
+      },
+    });
+    const orderId = order.id;
 
     // ── Step 5: Store on user doc ────────────────────────────
     step = 'save_user';
@@ -124,7 +109,6 @@ export async function POST(request) {
       orderId,
       amount: planInfo.price * 100,
       currency: 'INR',
-      isMock,
     });
   } catch (err) {
     console.error(`Create order error at step [${step}]:`, err);

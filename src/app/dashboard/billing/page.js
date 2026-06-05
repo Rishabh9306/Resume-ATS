@@ -47,34 +47,6 @@ export default function BillingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to upgrade');
 
-      if (data.isMock) {
-        showToast('Developer Mock Mode: Simulating payment...', 'info');
-        setTimeout(async () => {
-          try {
-            const verifyRes = await fetch('/api/razorpay/verify-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
-                razorpay_order_id: data.orderId,
-                razorpay_signature: 'mock_signature',
-                planId,
-              }),
-            });
-            if (!verifyRes.ok) throw new Error('Mock verification failed');
-            showToast(`Mock payment successful! Upgraded to ${PLANS[planId].name}.`, 'success');
-            setTimeout(() => window.location.reload(), 2000);
-          } catch (verifyErr) {
-            console.error(verifyErr);
-            showToast('Mock verification failed.', 'error');
-          }
-        }, 1500);
-        return;
-      }
-
       // ── Load Razorpay Standard Checkout (Orders flow) ─────────
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
