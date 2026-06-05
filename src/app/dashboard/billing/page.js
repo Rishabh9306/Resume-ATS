@@ -164,9 +164,8 @@ export default function BillingPage() {
       </h3>
       <div className="pricing__grid">
         {Object.values(PLANS).map((plan) => (
-          <div key={plan.id} className={`pricing-card glass-card ${plan.popular ? 'pricing-card--popular' : ''} ${plan.id === currentPlan ? 'pricing-card--current' : ''}`}>
+          <div key={plan.id} className={`pricing-card glass-card ${plan.id === currentPlan ? 'pricing-card--current' : ''}`}>
             {plan.id === currentPlan && <div className="pricing-card__badge" style={{ background: 'var(--success)' }}>Current Plan</div>}
-            {plan.popular && plan.id !== currentPlan && <div className="pricing-card__badge">Most Popular</div>}
             
             <h3 className="pricing-card__name" style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-sm)' }}>{plan.name}</h3>
             
@@ -192,7 +191,7 @@ export default function BillingPage() {
             
             {plan.id !== currentPlan && plan.id !== 'free' && (
               <button
-                className={plan.popular ? 'btn-primary' : 'btn-secondary'}
+                className="btn-secondary"
                 style={{ width: '100%' }}
                 onClick={() => handleUpgrade(plan.id)}
                 disabled={upgrading === plan.id}
