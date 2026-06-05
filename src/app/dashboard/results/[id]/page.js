@@ -131,7 +131,10 @@ export default function ResultsPage() {
           breakdown: scanData.breakdown,
         }),
       });
-      if (!res.ok) throw new Error('Failed to generate suggestions');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.details || 'Failed to generate suggestions');
+      }
       const data = await res.json();
       setAiSuggestions(data.suggestions);
 
@@ -150,7 +153,7 @@ export default function ResultsPage() {
       showToast('AI suggestions generated!', 'success');
     } catch (err) {
       console.error('AI error:', err);
-      showToast('Failed to generate AI suggestions', 'error');
+      showToast(err.message || 'Failed to generate AI suggestions', 'error');
     } finally {
       setAiLoading(false);
     }
