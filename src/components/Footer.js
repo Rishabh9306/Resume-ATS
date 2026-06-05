@@ -58,10 +58,11 @@ export default function Footer() {
           <div className="footer__column">
             <h4 className="footer__column-title">Legal</h4>
             <div className="footer__links">
-              <Link href="#" className="footer__link">Privacy Policy</Link>
-              <Link href="#" className="footer__link">Terms of Service</Link>
-              <Link href="#" className="footer__link">Refund Policy</Link>
-              <Link href="#" className="footer__link">Contact</Link>
+              <Link href="/privacy" className="footer__link">Privacy Policy</Link>
+              <Link href="/terms" className="footer__link">Terms of Service</Link>
+              <Link href="/refund-policy" className="footer__link">Refund Policy</Link>
+              <Link href="/cancellation-policy" className="footer__link">Cancellation Policy</Link>
+              <Link href="/contact" className="footer__link">Contact Us</Link>
             </div>
           </div>
         </div>
