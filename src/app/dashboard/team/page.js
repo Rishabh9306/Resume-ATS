@@ -8,7 +8,7 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, deleteDoc } fr
 import { useToast } from '@/components/Toast';
 
 export default function TeamDashboardPage() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const { showToast } = useToast();
   
   const [team, setTeam] = useState(null);
@@ -87,6 +87,8 @@ export default function TeamDashboardPage() {
       const membershipRef = doc(db, 'memberships', inviteEmail.trim().toLowerCase());
       await setDoc(membershipRef, {
         ownerId: user.uid,
+        ownerPlan: userData?.plan || 'enterprise',
+        plan: userData?.plan || 'enterprise',
         addedAt: new Date().toISOString()
       });
 

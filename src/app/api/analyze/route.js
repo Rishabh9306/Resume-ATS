@@ -94,6 +94,37 @@ export async function POST(request) {
           userDoc = snap.data();
         }
 
+        // Server-side sync: resolve membership and inherit owner's plan automatically
+        if (userEmail) {
+          const membershipRef = adminDb.collection('memberships').doc(userEmail.toLowerCase());
+          const membershipSnap = await membershipRef.get();
+          if (membershipSnap.exists) {
+            const membData = membershipSnap.data();
+            const teamOwnerId = membData.ownerId;
+            
+            // Fetch the owner's current plan dynamically to ensure it is always up to date
+            const ownerRef = adminDb.collection('users').doc(teamOwnerId);
+            const ownerSnap = await ownerRef.get();
+            if (ownerSnap.exists) {
+              const ownerData = ownerSnap.data();
+              const ownerPlan = ownerData.plan || 'free';
+              
+              if (userDoc.teamOwnerId !== teamOwnerId || userDoc.plan !== ownerPlan) {
+                const updates = { teamOwnerId, plan: ownerPlan };
+                await userRef.set(updates, { merge: true });
+                userDoc = { ...userDoc, ...updates };
+              }
+            }
+          } else {
+            // If the user is no longer in any team but has a teamOwnerId, revert them to free plan
+            if (userDoc.teamOwnerId) {
+              const updates = { teamOwnerId: null, plan: 'free' };
+              await userRef.set(updates, { merge: true });
+              userDoc = { ...userDoc, ...updates };
+            }
+          }
+        }
+
         userPlan = userDoc.plan || 'free';
 
         // Check scan limits

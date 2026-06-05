@@ -46,11 +46,24 @@ async function fetchOrCreateUserDoc(firebaseUser) {
     const membershipRef = doc(db, 'memberships', userEmail);
     const membershipSnap = await getDoc(membershipRef);
     if (membershipSnap.exists()) {
-      teamOwnerId = membershipSnap.data().ownerId;
-      const ownerRef = doc(db, 'users', teamOwnerId);
-      const ownerSnap = await getDoc(ownerRef);
-      if (ownerSnap.exists()) {
-        inheritedPlan = ownerSnap.data().plan || 'free';
+      const membData = membershipSnap.data();
+      teamOwnerId = membData.ownerId;
+      inheritedPlan = membData.ownerPlan || membData.plan || 'free';
+      
+      // Fallback for legacy invites: try reading owner's plan, catching permission errors
+      if (inheritedPlan === 'free') {
+        try {
+          const ownerRef = doc(db, 'users', teamOwnerId);
+          const ownerSnap = await getDoc(ownerRef);
+          if (ownerSnap.exists()) {
+            inheritedPlan = ownerSnap.data().plan || 'free';
+          }
+        } catch (err) {
+          console.warn('Could not read owner profile directly (expected due to security rules):', err.message);
+          if (baseData && baseData.teamOwnerId === teamOwnerId) {
+            inheritedPlan = baseData.plan || 'free';
+          }
+        }
       }
     }
   }

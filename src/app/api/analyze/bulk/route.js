@@ -31,20 +31,48 @@ export async function POST(request) {
     const adminDb = await getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const userSnap = await userRef.get();
-    const userDoc = userSnap.exists ? userSnap.data() : {};
+    let userDoc = userSnap.exists ? userSnap.data() : {};
+    
+    const memberEmail = decoded.email || userDoc.email || '';
+
+    // Server-side sync: resolve membership and inherit owner's plan automatically
+    if (memberEmail) {
+      const membershipRef = adminDb.collection('memberships').doc(memberEmail.toLowerCase());
+      const membershipSnap = await membershipRef.get();
+      if (membershipSnap.exists) {
+        const membData = membershipSnap.data();
+        const teamOwnerId = membData.ownerId;
+        
+        // Fetch the owner's current plan dynamically to ensure it is always up to date
+        const ownerRef = adminDb.collection('users').doc(teamOwnerId);
+        const ownerSnap = await ownerRef.get();
+        if (ownerSnap.exists) {
+          const ownerData = ownerSnap.data();
+          const ownerPlan = ownerData.plan || 'free';
+          
+          if (userDoc.teamOwnerId !== teamOwnerId || userDoc.plan !== ownerPlan) {
+            const updates = { teamOwnerId, plan: ownerPlan };
+            await userRef.set(updates, { merge: true });
+            userDoc = { ...userDoc, ...updates };
+          }
+        }
+      } else {
+        // If the user is no longer in any team but has a teamOwnerId, revert them to free plan
+        if (userDoc.teamOwnerId) {
+          const updates = { teamOwnerId: null, plan: 'free' };
+          await userRef.set(updates, { merge: true });
+          userDoc = { ...userDoc, ...updates };
+        }
+      }
+    }
+
     const userPlan = userDoc.plan || null;
     if (!['teams', 'enterprise'].includes(userPlan)) {
       return NextResponse.json({ error: 'Teams or Enterprise subscription required for bulk scanning.' }, { status: 403 });
     }
 
-    const memberEmail = decoded.email || userDoc.email || '';
     const memberName = userDoc.displayName || '';
-    let teamOwnerIdToSave = null;
-    if (userDoc.teamOwnerId) {
-      teamOwnerIdToSave = userDoc.teamOwnerId;
-    } else if (['teams', 'enterprise'].includes(userPlan)) {
-      teamOwnerIdToSave = userId;
-    }
+    let teamOwnerIdToSave = userDoc.teamOwnerId || (['teams', 'enterprise'].includes(userPlan) ? userId : null);
 
     // ── Parse form fields ────────────────────────────────────
     const formData = await request.formData();
