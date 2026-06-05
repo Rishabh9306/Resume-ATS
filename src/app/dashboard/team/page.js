@@ -115,8 +115,12 @@ export default function TeamDashboardPage() {
       });
 
       // Delete global membership mapping
-      const membershipRef = doc(db, 'memberships', memberToRemove.email.toLowerCase());
-      await deleteDoc(membershipRef);
+      try {
+        const membershipRef = doc(db, 'memberships', memberToRemove.email.toLowerCase());
+        await deleteDoc(membershipRef);
+      } catch (mapErr) {
+        console.warn('Membership mapping delete skipped/failed (legacy record?):', mapErr);
+      }
 
       setTeam((prev) => ({
         ...prev,
