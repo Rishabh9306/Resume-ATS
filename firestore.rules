@@ -49,5 +49,12 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read, update, delete: if false;
     }
+
+    // Rules for memberships collection
+    match /memberships/{email} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
   }
 }

@@ -58,6 +58,7 @@ export async function POST(request) {
     let userId = null;
     let userPlan = 'free';
     let userDoc = null;
+    let userEmail = null;
 
     const authHeader = request.headers.get('authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -67,6 +68,7 @@ export async function POST(request) {
         const adminDb = await getAdminDb();
         const decoded = await adminAuth.verifyIdToken(token);
         userId = decoded.uid;
+        userEmail = decoded.email || null;
 
         const userRef = adminDb.collection('users').doc(userId);
         const snap = await userRef.get();
@@ -178,6 +180,33 @@ export async function POST(request) {
         await userRef.set({
           scansUsed: admin.default.firestore.FieldValue.increment(1),
         }, { merge: true });
+
+        // If the user belongs to a recruiter team, update their scansThisMonth count in the owner's team document
+        const memberEmail = userEmail || userDoc?.email;
+        if (userDoc?.teamOwnerId && memberEmail) {
+          const teamRef = adminDb.collection('teams').doc(userDoc.teamOwnerId);
+          const teamSnap = await teamRef.get();
+          if (teamSnap.exists) {
+            const teamData = teamSnap.data();
+            const members = teamData.members || [];
+            
+            let memberUpdated = false;
+            const updatedMembers = members.map((member) => {
+              if (member.email?.toLowerCase() === memberEmail.toLowerCase()) {
+                memberUpdated = true;
+                return {
+                  ...member,
+                  scansThisMonth: (member.scansThisMonth || 0) + 1,
+                };
+              }
+              return member;
+            });
+
+            if (memberUpdated) {
+              await teamRef.update({ members: updatedMembers });
+            }
+          }
+        }
       } catch (saveErr) {
         // Don't fail the analysis if saving fails
         console.error('Failed to save scan:', saveErr.message);

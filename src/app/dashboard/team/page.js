@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import EnterpriseGate from '@/components/EnterpriseGate';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/components/Toast';
 
 export default function TeamDashboardPage() {
@@ -83,6 +83,13 @@ export default function TeamDashboardPage() {
         members: arrayUnion(newMember)
       });
 
+      // Create global membership mapping (lowercased for case-insensitive matching)
+      const membershipRef = doc(db, 'memberships', inviteEmail.trim().toLowerCase());
+      await setDoc(membershipRef, {
+        ownerId: user.uid,
+        addedAt: new Date().toISOString()
+      });
+
       setTeam((prev) => ({
         ...prev,
         members: [...prev.members, newMember]
@@ -106,6 +113,10 @@ export default function TeamDashboardPage() {
       await updateDoc(teamRef, {
         members: arrayRemove(memberToRemove)
       });
+
+      // Delete global membership mapping
+      const membershipRef = doc(db, 'memberships', memberToRemove.email.toLowerCase());
+      await deleteDoc(membershipRef);
 
       setTeam((prev) => ({
         ...prev,

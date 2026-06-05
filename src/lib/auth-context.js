@@ -29,34 +29,72 @@ const DEFAULT_USER_DATA = {
 
 /**
  * Fetch the user document from Firestore, or create one for new users.
+ * Also performs membership checks to inherit subscription plans from team owners.
  */
 async function fetchOrCreateUserDoc(firebaseUser) {
   if (!db) return { uid: firebaseUser.uid, ...DEFAULT_USER_DATA };
+  
   const userRef = doc(db, 'users', firebaseUser.uid);
   const snap = await getDoc(userRef);
+  let baseData = snap.exists() ? snap.data() : null;
 
-  if (snap.exists()) {
-    return { uid: firebaseUser.uid, ...snap.data() };
+  const userEmail = firebaseUser.email?.toLowerCase();
+  let teamOwnerId = null;
+  let inheritedPlan = 'free';
+
+  if (userEmail) {
+    const membershipRef = doc(db, 'memberships', userEmail);
+    const membershipSnap = await getDoc(membershipRef);
+    if (membershipSnap.exists()) {
+      teamOwnerId = membershipSnap.data().ownerId;
+      const ownerRef = doc(db, 'users', teamOwnerId);
+      const ownerSnap = await getDoc(ownerRef);
+      if (ownerSnap.exists()) {
+        inheritedPlan = ownerSnap.data().plan || 'free';
+      }
+    }
   }
 
-  // New user — create default document
   const now = new Date();
-  const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1); // first of next month
+  
+  if (!baseData) {
+    // New user — create default document with potential inherited plan
+    const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1); // first of next month
+    baseData = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: firebaseUser.displayName || '',
+      photoURL: firebaseUser.photoURL || '',
+      plan: teamOwnerId ? inheritedPlan : 'free',
+      teamOwnerId: teamOwnerId || null,
+      scansUsed: 0,
+      scansResetDate: resetDate,
+      createdAt: serverTimestamp(),
+    };
+    await setDoc(userRef, baseData);
+    return { ...baseData, createdAt: now };
+  }
 
-  const newUserData = {
-    uid: firebaseUser.uid,
-    email: firebaseUser.email,
-    displayName: firebaseUser.displayName || '',
-    photoURL: firebaseUser.photoURL || '',
-    plan: 'free',
-    scansUsed: 0,
-    scansResetDate: resetDate,
-    createdAt: serverTimestamp(),
-  };
+  // Existing user — check if team membership status has changed
+  const currentPlan = baseData.plan || 'free';
+  const currentOwner = baseData.teamOwnerId || null;
 
-  await setDoc(userRef, newUserData);
+  if (teamOwnerId) {
+    if (currentOwner !== teamOwnerId || currentPlan !== inheritedPlan) {
+      const updates = { teamOwnerId, plan: inheritedPlan };
+      await setDoc(userRef, updates, { merge: true });
+      baseData = { ...baseData, ...updates };
+    }
+  } else {
+    // If user was previously in a team but is no longer mapped
+    if (currentOwner !== null) {
+      const updates = { teamOwnerId: null, plan: 'free' };
+      await setDoc(userRef, updates, { merge: true });
+      baseData = { ...baseData, ...updates };
+    }
+  }
 
-  return { ...newUserData, createdAt: now };
+  return { uid: firebaseUser.uid, ...baseData };
 }
 
 export function AuthProvider({ children }) {
