@@ -30,9 +30,10 @@ export default function DashboardHome() {
         await refreshUserData();
       }
       const scansRef = collection(db, 'scans');
+      const queryField = ['teams', 'enterprise'].includes(currentPlan) ? 'teamOwnerId' : 'userId';
       const q = query(
         scansRef,
-        where('userId', '==', user.uid),
+        where(queryField, '==', user.uid),
         orderBy('createdAt', 'desc'),
         limit(20)
       );
@@ -76,9 +77,10 @@ export default function DashboardHome() {
     const fetchScans = async () => {
       try {
         const scansRef = collection(db, 'scans');
+        const queryField = ['teams', 'enterprise'].includes(currentPlan) ? 'teamOwnerId' : 'userId';
         const q = query(
           scansRef,
-          where('userId', '==', user.uid),
+          where(queryField, '==', user.uid),
           orderBy('createdAt', 'desc'),
           limit(20)
         );
@@ -115,7 +117,7 @@ export default function DashboardHome() {
     };
 
     fetchScans();
-  }, [user]);
+  }, [user, currentPlan]);
 
   const scansRemaining = planInfo.scansPerMonth === -1
     ? 'Unlimited'

@@ -156,6 +156,15 @@ export async function POST(request) {
     if (userId) {
       try {
         const adminDb = await getAdminDb();
+        
+        const memberEmail = userEmail || userDoc?.email || '';
+        let teamOwnerIdToSave = null;
+        if (userDoc?.teamOwnerId) {
+          teamOwnerIdToSave = userDoc.teamOwnerId;
+        } else if (['teams', 'enterprise'].includes(userPlan)) {
+          teamOwnerIdToSave = userId;
+        }
+
         const scanData = {
           userId,
           createdAt: new Date(),
@@ -169,6 +178,9 @@ export async function POST(request) {
           wordCount,
           pageEstimate,
           fileName: resumeFile.name,
+          teamOwnerId: teamOwnerIdToSave,
+          userEmail: memberEmail,
+          userName: userDoc?.displayName || '',
         };
 
         const scanRef = await adminDb.collection('scans').add(scanData);
@@ -182,7 +194,6 @@ export async function POST(request) {
         }, { merge: true });
 
         // If the user belongs to a recruiter team, update their scansThisMonth count in the owner's team document
-        const memberEmail = userEmail || userDoc?.email;
         if (userDoc?.teamOwnerId && memberEmail) {
           const teamRef = adminDb.collection('teams').doc(userDoc.teamOwnerId);
           const teamSnap = await teamRef.get();

@@ -31,9 +31,19 @@ export async function POST(request) {
     const adminDb = await getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const userSnap = await userRef.get();
-    const userPlan = userSnap.exists ? userSnap.data().plan : null;
+    const userDoc = userSnap.exists ? userSnap.data() : {};
+    const userPlan = userDoc.plan || null;
     if (!['teams', 'enterprise'].includes(userPlan)) {
       return NextResponse.json({ error: 'Teams or Enterprise subscription required for bulk scanning.' }, { status: 403 });
+    }
+
+    const memberEmail = decoded.email || userDoc.email || '';
+    const memberName = userDoc.displayName || '';
+    let teamOwnerIdToSave = null;
+    if (userDoc.teamOwnerId) {
+      teamOwnerIdToSave = userDoc.teamOwnerId;
+    } else if (['teams', 'enterprise'].includes(userPlan)) {
+      teamOwnerIdToSave = userId;
     }
 
     // ── Parse form fields ────────────────────────────────────
@@ -98,6 +108,9 @@ export async function POST(request) {
             wordCount,
             pageEstimate,
             fileName: file.name,
+            teamOwnerId: teamOwnerIdToSave,
+            userEmail: memberEmail,
+            userName: memberName,
           };
 
           const scanRef = await adminDb.collection('scans').add(scanData);
@@ -126,6 +139,32 @@ export async function POST(request) {
       await userRef.update({
         scansUsed: admin.default.firestore.FieldValue.increment(successfulScans),
       });
+
+      // Increment scans in owner's team document if this is a recruiter member
+      if (userDoc.teamOwnerId && memberEmail) {
+        const teamRef = adminDb.collection('teams').doc(userDoc.teamOwnerId);
+        const teamSnap = await teamRef.get();
+        if (teamSnap.exists) {
+          const teamData = teamSnap.data();
+          const members = teamData.members || [];
+          
+          let memberUpdated = false;
+          const updatedMembers = members.map((member) => {
+            if (member.email?.toLowerCase() === memberEmail.toLowerCase()) {
+              memberUpdated = true;
+              return {
+                ...member,
+                scansThisMonth: (member.scansThisMonth || 0) + successfulScans,
+              };
+            }
+            return member;
+          });
+
+          if (memberUpdated) {
+            await teamRef.update({ members: updatedMembers });
+          }
+        }
+      }
     }
 
     return NextResponse.json({ success: true, results });

@@ -55,7 +55,12 @@ export default function ScanHistory({ scans }) {
           {scans.map((scan) => (
             <tr key={scan.id}>
               <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                {scan.jobTitle || 'Untitled Scan'}
+                <div>{scan.jobTitle || 'Untitled Scan'}</div>
+                {scan.userEmail && (
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 400, marginTop: '2px' }}>
+                    by {scan.userEmail}
+                  </div>
+                )}
               </td>
               <td>
                 <span className={`scan-table__score-badge scan-table__score-badge--${getScoreColor(scan.score)}`}>

@@ -25,7 +25,9 @@ export default function DashboardLayout({ children }) {
   const notifRef = useRef(null);
 
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
+
+  const currentPlan = userData?.plan || 'free';
 
   const getPageTitle = () => {
     if (pathname.startsWith('/dashboard/results')) return 'Scan Results';
@@ -41,9 +43,10 @@ export default function DashboardLayout({ children }) {
     const fetchScans = async () => {
       try {
         const scansRef = collection(db, 'scans');
+        const queryField = ['teams', 'enterprise'].includes(currentPlan) ? 'teamOwnerId' : 'userId';
         const q = query(
           scansRef,
-          where('userId', '==', user.uid),
+          where(queryField, '==', user.uid),
           orderBy('createdAt', 'desc'),
           limit(5)
         );
@@ -64,7 +67,7 @@ export default function DashboardLayout({ children }) {
     };
 
     fetchScans();
-  }, [user]);
+  }, [user, currentPlan]);
 
   // Click outside to close notification dropdown
   useEffect(() => {
