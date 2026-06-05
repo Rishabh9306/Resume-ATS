@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import SupportWidget from '@/components/SupportWidget';
 
@@ -93,8 +94,11 @@ export default function LoginPage() {
   return (
     <>
       <div className="login-page">
-      {/* Left Panel */}
-      <div className="login-page__left">
+        <Link href="/" className="login-page__back-btn">
+          <span>←</span> Back to Home
+        </Link>
+        {/* Left Panel */}
+        <div className="login-page__left">
         <div className="login-page__left-content">
           <h1 className="login-page__left-title">
             Land Your <span className="gradient-text">Dream Job</span>

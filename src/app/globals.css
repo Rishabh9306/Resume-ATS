@@ -1454,6 +1454,34 @@ h1, h2, h3, h4, h5, h6 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
+  position: relative;
+}
+
+.login-page__back-btn {
+  position: absolute;
+  top: var(--space-xl);
+  left: var(--space-xl);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  transition: all var(--transition-fast);
+}
+
+.login-page__back-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(-4px);
 }
 .login-page__left {
   display: flex;
