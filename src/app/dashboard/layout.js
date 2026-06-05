@@ -111,16 +111,12 @@ export default function DashboardLayout({ children }) {
                 className="dashboard-hamburger"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Toggle sidebar"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-primary)',
-                  fontSize: 'var(--text-xl)',
-                  cursor: 'pointer',
-                  display: 'none', // Managed by responsive media queries in CSS
-                }}
               >
-                ☰
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <line x1="4" y1="6" x2="20" y2="6" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
               </button>
               <h2 className="dashboard-page-title" style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
                 {getPageTitle()}

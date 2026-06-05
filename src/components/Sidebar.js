@@ -49,13 +49,23 @@ export default function Sidebar({ isOpen, onClose }) {
         backdropFilter: 'blur(4px)'
       }} />}
       <aside className={`dashboard__sidebar ${isOpen ? 'dashboard__sidebar--open' : ''}`}>
-        <div className="dashboard__sidebar-logo">
+        <div className="dashboard__sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
             <span className="gradient-text" style={{ fontSize: 'var(--text-lg)', fontWeight: 800 }}>ResumeATS</span>
             {currentPlan !== 'free' && (
               <span className="navbar__logo-badge">{planInfo.name}</span>
             )}
           </Link>
+          <button 
+            className="sidebar-close-btn" 
+            onClick={onClose}
+            aria-label="Close sidebar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
 
         <nav className="dashboard__sidebar-nav">
