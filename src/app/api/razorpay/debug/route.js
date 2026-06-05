@@ -57,6 +57,31 @@ export async function GET() {
     };
   }
 
+  // Step 4b: Direct fetch test to isolate SDK issues
+  try {
+    const authStr = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+    const res = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authStr}`
+      },
+      body: JSON.stringify({
+        amount: 100,
+        currency: 'INR',
+        receipt: `debug_direct_${Date.now()}`
+      })
+    });
+    const resData = await res.json();
+    d.steps.razorpay_direct_fetch = {
+      status: res.status,
+      ok: res.ok,
+      data: resData
+    };
+  } catch (err) {
+    d.steps.razorpay_direct_fetch = { error: err.message };
+  }
+
   // Step 5: Simulate the exact flow from create-subscription (without auth)
   try {
     const { getAdminDb } = await import('@/lib/firebase-admin');
