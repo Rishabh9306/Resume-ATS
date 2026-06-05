@@ -62,6 +62,7 @@ export default function Footer() {
               <Link href="/terms" className="footer__link">Terms of Service</Link>
               <Link href="/refund-policy" className="footer__link">Refund Policy</Link>
               <Link href="/cancellation-policy" className="footer__link">Cancellation Policy</Link>
+              <Link href="/shipping-policy" className="footer__link">Shipping Policy</Link>
               <Link href="/contact" className="footer__link">Contact Us</Link>
             </div>
           </div>
