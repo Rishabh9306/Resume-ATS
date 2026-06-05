@@ -50,7 +50,11 @@ export async function GET() {
     });
     d.steps.razorpay_order = { ok: true, order_id: order.id };
   } catch (err) {
-    d.steps.razorpay_order = { error: err.message };
+    d.steps.razorpay_order = {
+      error: err.message || err.description || err.error?.description || String(err),
+      statusCode: err.statusCode,
+      raw: err
+    };
   }
 
   // Step 5: Simulate the exact flow from create-subscription (without auth)
