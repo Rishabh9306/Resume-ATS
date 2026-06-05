@@ -32,5 +32,22 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow write: if false; // Invoices are strictly written via Admin SDK / Server webhook
     }
+
+    // Rules for teams collection
+    match /teams/{teamId} {
+      allow read, write: if isOwner(teamId);
+    }
+
+    // Rules for feedback collection
+    match /feedback/{feedbackId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
+
+    // Rules for bug_reports collection
+    match /bug_reports/{bugId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
   }
 }
